@@ -61,16 +61,23 @@
 </div>
 
 <script>
-    async function checkSecurity() {
-        // Check for the session token dropped by steps.html
-        const hasPassedStep = sessionStorage.getItem('ukm_auth');
+    function checkSecurity() {
+        // Accept if user arrived with ?v=1 (set by the shortener destination)
+        // OR if sessionStorage flag exists (same-tab flow).
+        const urlOk = new URLSearchParams(location.search).get('v') === '1';
+        const sessionOk = sessionStorage.getItem('ukm_auth') === 'true';
 
-        if (hasPassedStep === 'true') {
+        if (urlOk || sessionOk) {
             document.getElementById('mainContainer').style.display = "block";
             document.getElementById('bypassContainer').style.display = "none";
             generateLockedKey();
-            
-            // Clear the token so they can't just refresh the page to get infinite keys without shortener
+
+            // Clean the ?v=1 from the URL bar so a refresh doesn't hand out a fresh key forever
+            if (urlOk) {
+                history.replaceState({}, '', location.pathname);
+            }
+
+            // One-time use in this tab
             sessionStorage.removeItem('ukm_auth');
         } else {
             document.getElementById('mainContainer').style.display = "none";
@@ -85,11 +92,9 @@
             const data = await response.json();
             const ip = data.ip;
 
-            // Daily key seed
             const day = Math.floor(Date.now() / 86400000);
             const ipSeed = parseInt(ip.replace(/\./g, '').substring(0, 6));
 
-            // Seed: IP + Date + Year
             let seed = ipSeed + day + 2026;
 
             function rnd() {
@@ -119,7 +124,7 @@
 
     function copyKey() {
         const keyText = document.getElementById('finalKey').innerText;
-        if (keyText.includes("SECURE") || keyText.includes("CONNECT")) return;
+        if (keyText.includes("SECURE") || keyText.includes("CONNECT") || keyText.includes("ACCESS")) return;
 
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
