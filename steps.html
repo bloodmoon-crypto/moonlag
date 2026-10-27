@@ -59,18 +59,14 @@
             </div>
         </div>
 
-        <button class="btn" id="continueBtn">
-            Continue to Step ➜
-        </button>
+        <button class="btn" id="continueBtn">Continue to Step ➜</button>
     </div>
 </div>
 
 <script>
     document.getElementById('continueBtn').addEventListener('click', function() {
-        // Drop the session token BEFORE redirecting
-        sessionStorage.setItem('ukm_auth', 'true');
-        
-        // Redirect to your shortener
+        // The vplink link below must have its destination set to:
+        // https://YOURUSERNAME.github.io/YOURREPO/index.html?v=1
         location.href = 'https://vplink.in/QqgI';
     });
 </script>
