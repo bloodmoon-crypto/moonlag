@@ -13,32 +13,40 @@
         .error-card { background: #1a0a0a; border: 1px solid #441111; border-radius: 28px; padding: 40px 30px; box-shadow: 0 10px 40px rgba(255,0,0,0.1); }
         .error-icon { font-size: 50px; margin-bottom: 20px; }
         .error-title { color: var(--error); font-size: 24px; font-weight: bold; margin-bottom: 15px; }
-        .key-icon { background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: -45px auto 15px; border: 1px solid #333; overflow: hidden; box-shadow: 0 0 25px rgba(0, 255, 136, 0.1); position: relative; z-index: 10; }
+        .key-icon { background: #1a1a1a; width: 85px; height: 85px; border-radius: 50%; display: flex; justify-content: center; align-items: center; margin: -45px auto 15px; border: 1px solid #333; overflow: hidden; box-shadow: 0 0 25px rgba(0,255,136,0.1); position: relative; z-index: 10; }
+        .key-icon img { width: 100%; height: 100%; object-fit: cover; }
+        @media (min-width: 768px) { .container { max-width: 450px; } .key-icon { width: 110px; height: 110px; margin: -55px auto 20px; } }
         h1 { font-size: 28px; font-weight: bold; margin-bottom: 8px; }
         .subtitle { color: #888; font-size: 14px; margin-bottom: 30px; }
         .card { background: var(--card); border: 1px solid #222; border-radius: 28px; padding: 40px 30px 30px; text-align: center; box-shadow: 0 15px 50px rgba(0,0,0,0.6); position: relative; }
         h2 { font-size: 22px; margin-bottom: 12px; color: var(--accent); font-weight: 700; }
-        .key-box { background: #000; padding: 22px; border-radius: 18px; border: 1px dashed var(--accent); margin-bottom: 25px; }
-        #finalKey { color: var(--accent); font-family: 'Courier New', monospace; font-size: 19px; font-weight: bold; letter-spacing: 1px; }
-        .btn { width: 100%; padding: 18px; background: #ffffff; color: #000; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; }
+        .card-p { color: #999; font-size: 14px; line-height: 1.6; margin-bottom: 25px; }
+        .key-box { background: #000; padding: 22px; border-radius: 18px; border: 1px dashed var(--accent); margin-bottom: 25px; position: relative; overflow: hidden; }
+        #finalKey { color: var(--accent); font-family: 'Courier New', monospace; font-size: 19px; font-weight: bold; letter-spacing: 1px; word-break: break-all; }
+        .btn { width: 100%; padding: 18px; background: #ffffff; color: #000; border: none; border-radius: 16px; font-size: 16px; font-weight: 800; cursor: pointer; transition: 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); }
+        .btn:hover { transform: scale(1.03); background: var(--accent); box-shadow: 0 10px 20px rgba(0,255,136,0.2); }
         .btn-red { background: var(--error); color: white; margin-top: 20px; }
-        input { width: 100%; padding: 15px; margin-bottom: 15px; border-radius: 12px; border: 1px solid #333; background: #1a1a1a; color: white; text-align: center; font-size: 16px; box-sizing: border-box; }
+        .footer { margin-top: 80px; color: #333; font-size: 10px; letter-spacing: 2px; text-transform: uppercase; font-weight: bold; }
+        .ip-info { color: #444; font-size: 11px; font-family: 'Courier New', monospace; margin-bottom: 20px; }
     </style>
 </head>
 <body>
-
 <div class="container">
+
     <div id="mainContainer">
-        <h1>Device Lock System</h1>
-        <p class="subtitle">Enter the Device ID shown in the app.</p>
+        <div class="key-icon">
+            <img src="./assets/logo.png" alt="UKM">
+        </div>
+        <h1>Access Unlocked</h1>
+        <p class="subtitle">Your device-locked license key is ready.</p>
         <div class="card">
-            <h2>24h License Generator</h2>
-            <input type="text" id="deviceIdInput" placeholder="Paste Device ID Here">
-            <button class="btn" onclick="generateKey()">GENERATE KEY</button>
-            <div class="key-box" style="margin-top:20px;">
-                <span id="finalKey">WAITING...</span>
+            <h2>Generation Success!</h2>
+            <p class="card-p">This key is locked to your device and expires in 24 hours.</p>
+            <div class="key-box">
+                <span id="finalKey">FETCHING...</span>
             </div>
-            <button class="btn" id="copyBtn" onclick="copyKey()" style="display:none;">COPY TO CLIPBOARD</button>
+            <p class="ip-info" id="ipInfo"></p>
+            <button class="btn" id="copyBtn" onclick="copyKey()">COPY TO CLIPBOARD</button>
         </div>
     </div>
 
@@ -46,57 +54,58 @@
         <div class="error-card">
             <div class="error-icon">🚫</div>
             <div class="error-title">Bypass Detected!</div>
-            <p style="color:#888; font-size: 14px;">Direct access is prohibited. Please use the official link from the script to generate your key.</p>
+            <p style="color:#888; font-size:14px; line-height:1.5;">Direct access is prohibited. Please use the official link from the app to generate your key.</p>
             <button class="btn btn-red" onclick="location.href='steps.html'">RETURN TO STEPS</button>
         </div>
     </div>
+
+    <div class="footer">UNKNOWN MODZ SECURITY SYSTEM</div>
 </div>
 
 <script>
-    function checkSecurity() {
-        const urlOk = new URLSearchParams(location.search).get('v') === '1';
-        if (urlOk) {
-            document.getElementById('mainContainer').style.display = "block";
-            document.getElementById('bypassContainer').style.display = "none";
-            history.replaceState({}, '', location.pathname);
-        } else {
-            document.getElementById('bypassContainer').style.display = "block";
+    // EXACT replication of app's calculateMathKey()
+    // LCG: seed = (seed * 0x41C64E6D + 0x3039) & 0x7FFFFFFF
+    // Seed: ipSeed + day + 0x7EA
+    function calculateMathKey(ip) {
+        try {
+            const ipSeed = parseInt(ip.replace(/\./g, '').substring(0, 6), 10);
+            const day = Math.floor(Date.now() / 86400000);
+            let seed = (ipSeed + day + 0x7ea) | 0;
+
+            const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+            let out = "UKM-";
+            for (let i = 0; i < 4; i++) {
+                for (let j = 0; j < 4; j++) {
+                    seed = ((Math.imul(seed, 0x41C64E6D) + 0x3039) | 0) & 0x7FFFFFFF;
+                    out += chars.charAt(seed % 32);
+                }
+                if (i < 3) out += "-";
+            }
+            return out;
+        } catch (e) {
+            return "ERROR";
         }
     }
 
-    function generateKey() {
-        const devId = document.getElementById('deviceIdInput').value.trim();
-        if (!devId || devId.length < 5) {
-            alert("Please paste your Device ID");
-            return;
-        }
+    async function generateLockedKey() {
+        try {
+            // Plain text fetch — matches app's HttpsURLConnection exactly
+            const res = await fetch('https://api.ipify.org', { cache: 'no-store' });
+            const ip = (await res.text()).trim();
 
-        // Java String.hashCode() simulation
-        let hash = 0;
-        for (let i = 0; i < devId.length; i++) {
-            hash = ((hash << 5) - hash) + devId.charCodeAt(i);
-            hash |= 0; // Convert to 32bit integer
-        }
-
-        const day = Math.floor(Date.now() / 86400000);
-        let seed = (hash + day + 0x7EA) | 0;
-
-        const chars = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789";
-        let key = "UKM-";
-
-        for (let i = 0; i < 4; i++) {
-            for (let j = 0; j < 4; j++) {
-                seed = Math.imul(seed, 0x41C64E6D) + 0x3039;
-                seed = (seed & 0x7FFFFFFF) | 0;
-                let idx = seed % 32;
-                if (idx < 0) idx += 32;
-                key += chars[idx];
+            // Validate IPv4
+            if (!/^\d{1,3}(\.\d{1,3}){3}$/.test(ip)) {
+                document.getElementById('finalKey').innerText = "IP ERROR - RETRY";
+                return;
             }
-            if (i < 3) key += '-';
-        }
 
-        document.getElementById('finalKey').innerText = key;
-        document.getElementById('copyBtn').style.display = "block";
+            const key = calculateMathKey(ip);
+            document.getElementById('finalKey').innerText = key;
+            document.getElementById('ipInfo').innerText = "locked to: " + ip.substring(0, ip.lastIndexOf('.')) + ".xxx";
+
+        } catch (err) {
+            document.getElementById('finalKey').innerText = "NO CONNECTION";
+        }
     }
 
     function copyKey() {
@@ -105,8 +114,37 @@
         navigator.clipboard.writeText(keyText).then(() => {
             const btn = document.getElementById('copyBtn');
             btn.innerText = "COPIED SUCCESSFULLY! ✅";
+            btn.style.background = "#00ff88";
+            setTimeout(() => {
+                btn.innerText = "COPY TO CLIPBOARD";
+                btn.style.background = "#ffffff";
+            }, 2000);
+        }).catch(() => {
+            // Fallback for older browsers
+            const ta = document.createElement('textarea');
+            ta.value = keyText;
+            document.body.appendChild(ta);
+            ta.select();
+            document.execCommand('copy');
+            document.body.removeChild(ta);
+            const btn = document.getElementById('copyBtn');
+            btn.innerText = "COPIED SUCCESSFULLY! ✅";
             setTimeout(() => { btn.innerText = "COPY TO CLIPBOARD"; }, 2000);
         });
+    }
+
+    function checkSecurity() {
+        const params = new URLSearchParams(window.location.search);
+        const v = params.get('v');
+
+        if (v === '1') {
+            // Clean URL so users can't just share ?v=1
+            history.replaceState({}, document.title, window.location.pathname);
+            document.getElementById('mainContainer').style.display = "block";
+            generateLockedKey();
+        } else {
+            document.getElementById('bypassContainer').style.display = "block";
+        }
     }
 
     window.onload = checkSecurity;
